@@ -15,3 +15,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+jwt:
+  secretKey: a8sd6faihdfjkas2398789afhdskjasdfh87yhk3jha987sdf89aabsdf876
+  expiry:
+    accessToken: 60000
+    refreshToken: 600000
