@@ -7,7 +7,7 @@ import com.ecommApp.ecomm_app.user.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
-@Mapper(componentModel =  "spring")
+@Mapper(componentModel =  MappingConstants.ComponentModel.SPRING)
 public interface UserMapper {
     User toEntity(CustomerSignupRequest request);
 
