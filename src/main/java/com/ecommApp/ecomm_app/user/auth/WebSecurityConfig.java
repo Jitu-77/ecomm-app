@@ -40,19 +40,16 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/refresh")
                         .permitAll()
-
+                        //------category controller-----------
                         .requestMatchers(HttpMethod.POST, "/api/categories/**")
                         .hasRole("ADMIN")
-
                         .requestMatchers(HttpMethod.PUT, "/api/categories/**")
                         .hasRole("ADMIN")
-
                         .requestMatchers(HttpMethod.DELETE, "/api/categories/**")
                         .hasRole("ADMIN")
-
                         .requestMatchers(HttpMethod.GET, "/api/categories/**")
                         .permitAll()
-
+                        //------category controller-----------
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exHandlingConfig -> exHandlingConfig.accessDeniedHandler(accessDeniedHandler()));
