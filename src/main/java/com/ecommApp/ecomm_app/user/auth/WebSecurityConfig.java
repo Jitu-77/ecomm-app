@@ -50,6 +50,12 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/**")
                         .permitAll()
                         //------category controller-----------
+                        //------product controller-----------
+                        .requestMatchers(HttpMethod.GET, "/api/products")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**")
+                        .permitAll()
+                        //------product controller-----------
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exHandlingConfig -> exHandlingConfig.accessDeniedHandler(accessDeniedHandler()));
