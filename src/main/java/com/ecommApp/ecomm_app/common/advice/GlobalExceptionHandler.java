@@ -1,6 +1,7 @@
 package com.ecommApp.ecomm_app.common.advice;
 
 import com.ecommApp.ecomm_app.common.exceptions.DuplicateResourceFoundException;
+import com.ecommApp.ecomm_app.common.exceptions.InsufficientQuantityException;
 import com.ecommApp.ecomm_app.common.exceptions.ResourceNotFoundException;
 import com.ecommApp.ecomm_app.common.exceptions.UnAuthorisedException;
 import org.springframework.http.HttpStatus;
@@ -66,7 +67,19 @@ public class GlobalExceptionHandler {
                 .build();
         return buildErrorResponseEntity(apiError);
     }
+
+    @ExceptionHandler(InsufficientQuantityException.class)
+    public ResponseEntity<ApiResponse<?>> handleDuplicateResourceFound(InsufficientQuantityException exception) {
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.EXPECTATION_FAILED)
+                .message(exception.getMessage())
+                .build();
+        return buildErrorResponseEntity(apiError);
+    }
+
     private ResponseEntity<ApiResponse<?>> buildErrorResponseEntity(ApiError apiError) {
         return new ResponseEntity<>(new ApiResponse<>(apiError), apiError.getStatus());
     }
+
+
 }

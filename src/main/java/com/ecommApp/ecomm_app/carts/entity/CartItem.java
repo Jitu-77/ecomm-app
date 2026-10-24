@@ -4,6 +4,8 @@ import com.ecommApp.ecomm_app.products.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(
         name = "cart_items",
@@ -43,4 +45,7 @@ public class CartItem {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal unitPrice;
 }
