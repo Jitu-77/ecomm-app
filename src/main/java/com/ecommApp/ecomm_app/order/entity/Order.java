@@ -44,10 +44,11 @@ public class Order {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalAmount;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "shipping_address_id",
-            foreignKey = @ForeignKey(name = "fk_order_shipping_address")
+    @OneToOne(
+            mappedBy = "order",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
     private OrderAddress shippingAddress;
 
@@ -59,4 +60,16 @@ public class Order {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

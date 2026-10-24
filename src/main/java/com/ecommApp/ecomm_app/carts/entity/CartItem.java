@@ -1,5 +1,6 @@
 package com.ecommApp.ecomm_app.carts.entity;
 
+import com.ecommApp.ecomm_app.common.enums.CartItemStatus;
 import com.ecommApp.ecomm_app.products.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,13 +9,14 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(
-        name = "cart_items",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_cart_product",
-                        columnNames = {"cart_id", "product_id"}
-                )
-        }
+        name = "cart_items"
+//        ,
+//        uniqueConstraints = {
+//                @UniqueConstraint(
+//                        name = "uk_cart_product",
+//                        columnNames = {"cart_id", "product_id"}
+//                )
+//        }
 )
 @Getter
 @Setter
@@ -48,4 +50,9 @@ public class CartItem {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal unitPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private CartItemStatus status = CartItemStatus.ACTIVE;
 }

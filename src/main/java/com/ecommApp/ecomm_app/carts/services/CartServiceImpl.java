@@ -9,8 +9,10 @@ import com.ecommApp.ecomm_app.carts.mapper.CartItemMapper;
 import com.ecommApp.ecomm_app.carts.mapper.CartMapper;
 import com.ecommApp.ecomm_app.carts.repository.CartRepository;
 import com.ecommApp.ecomm_app.carts.repository.CartItemRepository;
+import com.ecommApp.ecomm_app.common.enums.CartItemStatus;
 import com.ecommApp.ecomm_app.common.enums.CartStatus;
 import com.ecommApp.ecomm_app.common.exceptions.InsufficientQuantityException;
+import com.ecommApp.ecomm_app.common.exceptions.ProductQuantityException;
 import com.ecommApp.ecomm_app.common.exceptions.ResourceNotFoundException;
 import com.ecommApp.ecomm_app.inventory.entity.Inventory;
 import com.ecommApp.ecomm_app.inventory.repository.InventoryRepository;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -68,56 +71,69 @@ public class CartServiceImpl implements CartService {
                 );
 
         if (!product.getActive()) {
-            throw new IllegalStateException(
-                    "Product is not active"
-            );
+            throw new ResourceNotFoundException("Product is not active");
         }
-
-        CartItem cartItem = cartItemRepository
-                .findByCartAndProduct(cart, product)
-                .orElse(null);
 
         Inventory inventory = inventoryRepository
                 .findByProductId(product.getId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Inventory not found for product: "
-                                        + product.getId()
+                                "Inventory not found for product: " + product.getId()
                         )
                 );
 
-        validateAddToCart(
-                product,
-                cartItem,
-                inventory
-        );
+        Optional<CartItem> existingItem =
+                cartItemRepository.findByCartAndProductAndStatus(
+                        cart,
+                        product,
+                        CartItemStatus.ACTIVE
+                );
 
-        if (cartItem != null) {
+        if (existingItem.isPresent()) {
 
-            cartItem.setQuantity(
-                    cartItem.getQuantity() + 1
-            );
+            CartItem cartItem = existingItem.get();
+
+            int newQuantity = cartItem.getQuantity() + 1;
+
+            if (newQuantity > inventory.getAvailableQty()) {
+                throw new InsufficientQuantityException(
+                        "Insufficient stock for product: " + product.getName()
+                );
+            }
+
+            cartItem.setQuantity(newQuantity);
 
         } else {
 
-            cartItem = CartItem.builder()
+            if (inventory.getAvailableQty() < 1) {
+                throw new InsufficientQuantityException(
+                        "Product is out of stock: " + product.getName()
+                );
+            }
+
+            CartItem cartItem = CartItem.builder()
                     .cart(cart)
                     .product(product)
                     .quantity(1)
                     .unitPrice(product.getPrice())
+                    .status(CartItemStatus.ACTIVE)
                     .build();
 
             cart.getItems().add(cartItem);
         }
-
-        cartItemRepository.save(cartItem);
 
         return buildCartResponse(cart);
     }
 
     @Override
     @Transactional
-    public CartResponse updateItem(Long cartItemId, Integer newQuantity) {
+    public CartResponse updateItem(Long cartItemId, Integer quantity) {
+
+        if (quantity == null || quantity <= 0) {
+            throw new ProductQuantityException(
+                    "Quantity must be greater than zero"
+            );
+        }
 
         User currentUser = SecurityUtils.getCurrentUser();
 
@@ -127,34 +143,39 @@ public class CartServiceImpl implements CartService {
                 );
 
         CartItem cartItem = cartItemRepository
-                .findByIdAndCart(cartItemId, cart)
+                .findByIdAndCartAndStatus(
+                        cartItemId,
+                        cart,
+                        CartItemStatus.ACTIVE
+                )
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Cart item not found with id: " + cartItemId
+                                "Active cart item not found with id: " + cartItemId
                         )
                 );
 
-        Product product = cartItem.getProduct();
+        int currentQuantity = cartItem.getQuantity();
 
-        Inventory inventory = inventoryRepository
-                .findByProductId(product.getId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Inventory not found for product: "
-                                        + product.getId()
-                        )
+        if (quantity > currentQuantity) {
+
+            Inventory inventory = inventoryRepository
+                    .findByProductId(cartItem.getProduct().getId())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Inventory not found for product: "
+                                            + cartItem.getProduct().getId()
+                            )
+                    );
+
+            if (quantity > inventory.getAvailableQty()) {
+                throw new InsufficientQuantityException(
+                        "Insufficient stock for product: "
+                                + cartItem.getProduct().getName()
                 );
+            }
+        }
 
-        validateUpdateQuantity(
-                product,
-                cartItem,
-                inventory,
-                newQuantity
-        );
-
-        cartItem.setQuantity(newQuantity);
-
-        cartItemRepository.save(cartItem);
+        cartItem.setQuantity(quantity);
 
         return buildCartResponse(cart);
     }
@@ -173,14 +194,17 @@ public class CartServiceImpl implements CartService {
                 );
 
         CartItem cartItem = cartItemRepository
-                .findByIdAndCart(cartItemId, cart)
+                .findByIdAndCartAndStatus(
+                        cartItemId,
+                        cart,
+                        CartItemStatus.ACTIVE
+                )
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Cart item not found with id: " + cartItemId
+                                "Active cart item not found with id: " + cartItemId
                         )
                 );
 
-        cart.getItems().remove(cartItem);
         cartItemRepository.delete(cartItem);
     }
 
@@ -195,7 +219,13 @@ public class CartServiceImpl implements CartService {
                         new ResourceNotFoundException("Cart not found")
                 );
 
-        cart.getItems().clear();
+        List<CartItem> activeItems =
+                cartItemRepository.findByCartAndStatus(
+                        cart,
+                        CartItemStatus.ACTIVE
+                );
+
+        cartItemRepository.deleteAll(activeItems);
     }
 
     private Cart createCart(User user) {
@@ -210,7 +240,13 @@ public class CartServiceImpl implements CartService {
 
     private CartResponse buildCartResponse(Cart cart) {
 
-        List<CartItemResponse> itemResponses = cart.getItems()
+        List<CartItem> activeItems =
+                cartItemRepository.findByCartAndStatus(
+                        cart,
+                        CartItemStatus.ACTIVE
+                );
+
+        List<CartItemResponse> itemResponses = activeItems
                 .stream()
                 .map(cartItem -> {
                     CartItemResponse response =
@@ -274,7 +310,7 @@ public class CartServiceImpl implements CartService {
         int finalQuantity = currentQuantity + 1;
 
         if (finalQuantity > inventory.getAvailableQty()) {
-            throw new IllegalStateException(
+            throw new InsufficientQuantityException(
                     "Insufficient inventory for product: " + product.getName()
             );
         }
@@ -287,7 +323,7 @@ public class CartServiceImpl implements CartService {
     ) {
 
         if (newQuantity == null || newQuantity <= 0) {
-            throw new IllegalArgumentException(
+            throw new ProductQuantityException(
                     "Quantity must be greater than zero"
             );
         }
