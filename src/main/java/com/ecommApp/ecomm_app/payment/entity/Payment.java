@@ -21,10 +21,12 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY
+//            , optional = false
+    )
     @JoinColumn(
             name = "order_id",
-            nullable = false,
+//            nullable = false,
             foreignKey = @ForeignKey(name = "fk_payment_order")
     )
     private Order order;
@@ -53,4 +55,23 @@ public class Payment {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String paymentReference;
+
+    @Column(nullable = false)
+    private LocalDateTime expiresAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
 }

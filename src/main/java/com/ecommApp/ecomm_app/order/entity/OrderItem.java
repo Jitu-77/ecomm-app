@@ -1,5 +1,6 @@
 package com.ecommApp.ecomm_app.order.entity;
 
+import com.ecommApp.ecomm_app.carts.entity.CartItem;
 import com.ecommApp.ecomm_app.products.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,17 +31,11 @@ public class OrderItem {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-            name = "product_id",
+            name = "cart_item_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_order_item_product")
+            foreignKey = @ForeignKey(name = "fk_order_item_cart_item")
     )
-    private Product product;
-
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal productPrice;
-
-    @Column(nullable = false)
-    private Integer quantity;
+    private CartItem cartItem;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal subtotal;

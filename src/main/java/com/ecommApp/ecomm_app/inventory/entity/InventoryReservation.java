@@ -2,6 +2,7 @@ package com.ecommApp.ecomm_app.inventory.entity;
 
 import com.ecommApp.ecomm_app.common.enums.ReservationStatus;
 import com.ecommApp.ecomm_app.order.entity.Order;
+import com.ecommApp.ecomm_app.payment.entity.Payment;
 import com.ecommApp.ecomm_app.products.entity.Product;
 
 import jakarta.persistence.*;
@@ -10,7 +11,15 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inventory_reservations")
+@Table(
+        name = "inventory_reservations"
+//        ,        uniqueConstraints = {
+//                @UniqueConstraint(
+//                        name = "uk_reservation_order_product",
+//                        columnNames = {"order_id", "product_id"}
+//                )
+//        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,13 +31,21 @@ public class InventoryReservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+//    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+//    @JoinColumn(
+//            name = "order_id",
+//            nullable = false,
+//            foreignKey = @ForeignKey(name = "fk_reservation_order")
+//    )
+//    private Order order;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-            name = "order_id",
+            name = "payment_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_reservation_order")
+            foreignKey = @ForeignKey(name = "fk_reservation_payment")
     )
-    private Order order;
+    private Payment payment;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
@@ -53,4 +70,16 @@ public class InventoryReservation {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

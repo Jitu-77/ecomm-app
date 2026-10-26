@@ -12,4 +12,5 @@ public interface IdempotencyRecordRepository
             Long userId,
             String idempotencyKey
     );
+    Optional<IdempotencyRecord> findByOrderId(Long orderId);
 }

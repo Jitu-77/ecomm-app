@@ -3,8 +3,13 @@ package com.ecommApp.ecomm_app.carts.controllers;
 import com.ecommApp.ecomm_app.carts.dto.CartItemRequest;
 import com.ecommApp.ecomm_app.carts.dto.CartResponse;
 
+import com.ecommApp.ecomm_app.carts.dto.CheckoutRequest;
+import com.ecommApp.ecomm_app.carts.dto.CheckoutResponse;
 import com.ecommApp.ecomm_app.carts.services.CartService;
+import com.ecommApp.ecomm_app.carts.services.CheckoutService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
 
     private final CartService cartService;
+    private final CheckoutService checkoutService;
 
     @GetMapping
     public ResponseEntity<CartResponse> getCart() {
@@ -60,5 +66,17 @@ public class CartController {
         cartService.clearCart();
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/checkout")
+    public ResponseEntity<CheckoutResponse> checkout(
+            @Valid @RequestBody CheckoutRequest request) {
+
+        CheckoutResponse response =
+                checkoutService.checkout(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 }

@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UnAuthorisedException.class)
-    public ResponseEntity<ApiResponse<?>> handleDuplicateResourceFound(UnAuthorisedException exception) {
+    public ResponseEntity<ApiResponse<?>> handleUnAuthorisedException(UnAuthorisedException exception) {
         ApiError apiError = ApiError.builder()
                 .status(HttpStatus.UNAUTHORIZED)
                 .message(exception.getMessage())
@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InsufficientQuantityException.class)
-    public ResponseEntity<ApiResponse<?>> handleDuplicateResourceFound(InsufficientQuantityException exception) {
+    public ResponseEntity<ApiResponse<?>> handleInsufficientQtyFound(InsufficientQuantityException exception) {
         ApiError apiError = ApiError.builder()
                 .status(HttpStatus.EXPECTATION_FAILED)
                 .message(exception.getMessage())
@@ -75,7 +75,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ProductQuantityException.class)
-    public ResponseEntity<ApiResponse<?>> handleDuplicateResourceFound(ProductQuantityException exception) {
+    public ResponseEntity<ApiResponse<?>> handleProductQtyExceptionFound(ProductQuantityException exception) {
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.EXPECTATION_FAILED)
+                .message(exception.getMessage())
+                .build();
+        return buildErrorResponseEntity(apiError);
+    }
+
+    @ExceptionHandler(PaymentRelatedException.class)
+    public ResponseEntity<ApiResponse<?>> handleOtherExceptionFound(PaymentRelatedException exception) {
         ApiError apiError = ApiError.builder()
                 .status(HttpStatus.EXPECTATION_FAILED)
                 .message(exception.getMessage())

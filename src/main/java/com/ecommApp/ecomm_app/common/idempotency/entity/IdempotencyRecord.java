@@ -1,6 +1,7 @@
 package com.ecommApp.ecomm_app.common.idempotency.entity;
 
 import com.ecommApp.ecomm_app.common.enums.IdempotencyStatus;
+import com.ecommApp.ecomm_app.order.entity.Order;
 import com.ecommApp.ecomm_app.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,6 +36,14 @@ public class IdempotencyRecord {
             foreignKey = @ForeignKey(name = "fk_idempotency_user")
     )
     private User user;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "order_id",
+            unique = true,
+            foreignKey = @ForeignKey(name = "fk_idempotency_order")
+    )
+    private Order order;
 
     @Column(nullable = false, length = 100)
     private String idempotencyKey;
