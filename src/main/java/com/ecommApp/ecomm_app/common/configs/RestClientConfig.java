@@ -1,4 +1,4 @@
-package com.ecommApp.ecomm_app.common.restClientBuilder;
+package com.ecommApp.ecomm_app.common.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

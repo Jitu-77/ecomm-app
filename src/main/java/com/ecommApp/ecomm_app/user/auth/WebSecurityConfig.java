@@ -38,7 +38,7 @@ public class WebSecurityConfig {
                 .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/refresh")
+                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/refresh","/api/payments/webhook")
                         .permitAll()
                         //------category controller-----------
                         .requestMatchers(HttpMethod.POST, "/api/categories/**")

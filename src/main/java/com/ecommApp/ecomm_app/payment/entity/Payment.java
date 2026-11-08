@@ -2,6 +2,7 @@ package com.ecommApp.ecomm_app.payment.entity;
 
 import com.ecommApp.ecomm_app.common.enums.PaymentStatus;
 import com.ecommApp.ecomm_app.order.entity.Order;
+import com.ecommApp.ecomm_app.user.entity.Address;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -61,6 +62,10 @@ public class Payment {
 
     @Column(nullable = false)
     private LocalDateTime expiresAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "address_id", nullable = false)
+    private Address address;
 
     @PrePersist
     protected void onCreate() {

@@ -62,8 +62,8 @@ public class Order {
     )
     private List<OrderItem> items = new ArrayList<>();
 
-    @Column(nullable = false)
-    private LocalDateTime expiresAt;
+//    @Column(nullable = false)
+//    private LocalDateTime expiresAt;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

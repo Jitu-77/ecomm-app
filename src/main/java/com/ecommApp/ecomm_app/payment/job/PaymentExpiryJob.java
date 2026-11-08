@@ -1,6 +1,7 @@
 package com.ecommApp.ecomm_app.payment.job;
 
 import com.ecommApp.ecomm_app.common.enums.PaymentStatus;
+import com.ecommApp.ecomm_app.order.services.OrderService;
 import com.ecommApp.ecomm_app.payment.client.PaymentSimulatorClient;
 import com.ecommApp.ecomm_app.payment.dto.PaymentSimulatorResponse;
 import com.ecommApp.ecomm_app.payment.entity.Payment;
@@ -24,6 +25,7 @@ public class PaymentExpiryJob {
     private final PaymentRepository paymentRepository;
     private final PaymentSimulatorClient paymentSimulatorClient;
     private final PaymentExpiryService paymentExpiryService;
+    private final OrderService orderService;
 
     @Scheduled(
             fixedDelayString = "${payment.expiry.scheduler.interval-ms:60000}"
@@ -74,6 +76,38 @@ public class PaymentExpiryJob {
                  *
                  * FAILED will also be handled as a release flow.
                  */
+//                if (response.status() == PaymentStatus.SUCCESS.toString()) {
+
+                if (PaymentStatus.SUCCESS.toString().equals(response.status())) {
+                    log.info(
+                            "Payment {} was successful in simulator. Processing successful payment.",
+                            payment.getPaymentReference()
+                    );
+
+                    orderService.processSuccessfulPayment(
+                            payment.getPaymentReference()
+                    );
+
+//                } else if (response.status() == PaymentStatus.FAILED.toString()) {
+                }else if (PaymentStatus.FAILED.toString().equals(response.status())) {
+
+                    log.info(
+                            "Payment {} failed in simulator. Processing failed payment.",
+                            payment.getPaymentReference()
+                    );
+
+                    orderService.processFailedPayment(
+                            payment.getPaymentReference()
+                    );
+
+//                } else if (response.status() == PaymentStatus.PENDING.toString()) {
+                } else if (PaymentStatus.PENDING.toString().equals(response.status())) {
+
+                    log.info(
+                            "Payment {} is still pending in simulator. Waiting for next reconciliation.",
+                            payment.getPaymentReference()
+                    );
+                }
 
             } catch (Exception ex) {
 

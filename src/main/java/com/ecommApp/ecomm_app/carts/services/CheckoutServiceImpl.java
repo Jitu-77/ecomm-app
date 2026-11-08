@@ -16,8 +16,11 @@ import com.ecommApp.ecomm_app.payment.entity.PaymentCartItem;
 import com.ecommApp.ecomm_app.payment.repository.PaymentCartItemRepository;
 import com.ecommApp.ecomm_app.payment.repository.PaymentRepository;
 import com.ecommApp.ecomm_app.user.auth.SecurityUtils;
+import com.ecommApp.ecomm_app.user.entity.Address;
 import com.ecommApp.ecomm_app.user.entity.User;
+import com.ecommApp.ecomm_app.user.repository.AddressRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CheckoutServiceImpl implements CheckoutService {
 
     private final CartItemRepository cartItemRepository;
@@ -35,7 +39,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final PaymentRepository paymentRepository;
     private final InventoryReservationRepository reservationRepository;
     private final PaymentCartItemRepository paymentCartItemRepository;
-
+    private final AddressRepository addressRepository;
     @Override
     @Transactional
     public CheckoutResponse checkout(CheckoutRequest request) {
@@ -50,14 +54,22 @@ public class CheckoutServiceImpl implements CheckoutService {
                         user.getId()
                 );
 
+        log.info("cartItems during checkout:{}",cartItems);
+
         // 3. Validate all requested items were found
         if (cartItems.size() != request.cartItemIds().size()) {
             throw new RuntimeException(
                     "One or more cart items are invalid"
             );
         }
+        // 4. Validate CartItem Address
+        Address address = addressRepository
+                .findByIdAndUserId(request.addressId(), user.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("Address not found for current user")
+                );
 
-        // 4. Validate CartItem status
+        // 5. Validate CartItem status
         for (CartItem cartItem : cartItems) {
 
             if (cartItem.getStatus() != CartItemStatus.ACTIVE) {
@@ -68,7 +80,9 @@ public class CheckoutServiceImpl implements CheckoutService {
             }
         }
 
-        // 5. Calculate total
+        log.info("cartItems and address validated during checkout:{}");
+
+        // 6. Calculate total
         BigDecimal totalAmount = cartItems.stream()
                 .map(item ->
                         item.getUnitPrice()
@@ -78,7 +92,7 @@ public class CheckoutServiceImpl implements CheckoutService {
                 )
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 6. Reserve inventory
+        // 7. Reserve inventory
         for (CartItem cartItem : cartItems) {
 
             Inventory inventory =
@@ -113,12 +127,12 @@ public class CheckoutServiceImpl implements CheckoutService {
             );
         }
 
-        // 7. Move CartItems to PAYMENT_PROCESSING
+        // 8. Move CartItems to PAYMENT_PROCESSING
         for (CartItem cartItem : cartItems) {
             cartItem.setStatus(CartItemStatus.PAYMENT_PROCESSING);
         }
 
-        // 8. Create Payment
+        // 9. Create Payment
         LocalDateTime expiresAt =
                 LocalDateTime.now().plusMinutes(4);
 
@@ -136,12 +150,13 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .paymentType("ONLINE")
                 .status(PaymentStatus.PENDING)
                 .amount(totalAmount)
+                .address(address)
                 .expiresAt(expiresAt)
                 .build();
 
         payment = paymentRepository.save(payment);
 
-        // 9. Create PaymentCartItems
+        // 10. Create PaymentCartItems
         for (CartItem cartItem : cartItems) {
 
             PaymentCartItem paymentCartItem =
@@ -156,7 +171,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
 
 
-        // 10. Create inventory reservations
+        // 11. Create inventory reservations
         for (CartItem cartItem : cartItems) {
 
             InventoryReservation reservation =
@@ -171,7 +186,7 @@ public class CheckoutServiceImpl implements CheckoutService {
             reservationRepository.save(reservation);
         }
 
-        // 11. Return payment details
+        // 12. Return payment details
         return new CheckoutResponse(
                 payment.getId(),
                 payment.getPaymentReference(),

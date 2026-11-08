@@ -41,4 +41,19 @@ public class PaymentSimulatorClient {
             return Optional.empty();
         }
     }
+
+    public void acknowledgeWebhook(String eventId) {
+
+        RestClient restClient = restClientBuilder
+                .baseUrl(baseUrl)
+                .build();
+
+        restClient.post()
+                .uri(
+                        "/api/payments/webhooks/{eventId}/ack",
+                        eventId
+                )
+                .retrieve()
+                .toBodilessEntity();
+    }
 }
